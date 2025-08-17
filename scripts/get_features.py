@@ -16,9 +16,10 @@ def get_dataframes(recon_bool=True):
     cells_w_recon = ctc.get_cells(require_reconstruction = recon_bool)
 
     # download all electrophysiology features for all cells
-    ephys_features = ctc.get_ephys_features()
-    ef_df = pd.DataFrame(ephys_features)
+    features_ephys = ctc.get_ephys_features()
+    ef_df = pd.DataFrame(features_ephys)
 
     all_ids = [item["id"] for item in cells_w_recon]
     ef_with_recon_df = ef_df[ef_df["specimen_id"].isin(all_ids)]
     return ef_with_recon_df
+
