@@ -1,5 +1,6 @@
 from allensdk.core.cell_types_cache import CellTypesCache
 import pandas as pd
+from sklearn.preprocessing import LabelEncoder
 
 def get_dataframes(recon_bool=True):
     """
@@ -20,6 +21,43 @@ def get_dataframes(recon_bool=True):
     ef_df = pd.DataFrame(features_ephys)
 
     all_ids = [item["id"] for item in cells_w_recon]
+    #ef_with_recon_df = ef_df[ef_df["specimen_id"].isin(all_ids)]
     ef_with_recon_df = ef_df[ef_df["specimen_id"].isin(all_ids)]
+    ef_with_recon_df.set_index("specimen_id", inplace=True)
     return ef_with_recon_df
+    
 
+def get_labels():
+    """
+    makes a new dataframe with the Y cell features that is filtered 
+
+    Returns:
+        Dataframe: of the cells ids and their corresponding labels
+    """
+    ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
+    cells = ctc.get_cells(require_reconstruction = True)
+
+    label_features = ["id", "species", "structure_layer_name", "structure_area_abbrev", "dendrite_type", "donor_id"]
+    all_ids = [[item[feature] for feature in label_features] for item in cells]
+    dataframe_labels = pd.DataFrame(all_ids, columns = label_features)
+    filtered_dataframe_labels = dataframe_labels[dataframe_labels["dendrite_type"].isin(["spiny", "aspiny"])]
+    filtered_dataframe_labels.set_index("id", inplace=True)
+
+    le1 = LabelEncoder()
+    le2 = LabelEncoder()
+    le3 = LabelEncoder()
+    le1.fit(filtered_dataframe_labels['dendrite_type'])
+    # print(le1.classes_)
+    filtered_dataframe_labels['dendrite_type_number'] = le1.transform(filtered_dataframe_labels['dendrite_type'])
+    # print(filtered_dataframe_labels[["dendrite_type", "dendrite_type_number"]])
+
+    le2.fit(filtered_dataframe_labels['structure_layer_name'])
+    # print(le2.classes_)
+    filtered_dataframe_labels['structure_layer_name_number'] = le2.transform(filtered_dataframe_labels['structure_layer_name'])
+    # print(filtered_dataframe_labels[["structure_layer_name", "structure_layer_name_number"]])
+
+    le3.fit(filtered_dataframe_labels['species'])
+    # print(le3.classes_)
+    filtered_dataframe_labels['species_number'] = le3.transform(filtered_dataframe_labels['species'])
+    # print(filtered_dataframe_labels[["species_number", "species_number"]])
+    return filtered_dataframe_labels
