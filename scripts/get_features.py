@@ -60,4 +60,16 @@ def get_labels():
     # print(le3.classes_)
     filtered_dataframe_labels['species_number'] = le3.transform(filtered_dataframe_labels['species'])
     # print(filtered_dataframe_labels[["species_number", "species_number"]])
+
+    filtered_dataframe_labels['processed_structure_layer_name'] = ''
+
+    for ind in filtered_dataframe_labels.index.values:
+        name = filtered_dataframe_labels.loc[ind, "structure_layer_name"]
+        filtered_dataframe_labels.loc[ind, "processed_structure_layer_name"] = "6"
+        if name in ["6a","6b"]:
+            filtered_dataframe_labels.loc[ind, "processed_structure_layer_name"] = "6"
+        elif name in ["2", "3"]:
+            filtered_dataframe_labels.loc[ind, "processed_structure_layer_name"] = "2/3"
+        else:
+            filtered_dataframe_labels.loc[ind, "processed_structure_layer_name"] = name
     return filtered_dataframe_labels
