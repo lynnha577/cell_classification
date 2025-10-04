@@ -73,3 +73,12 @@ def get_labels():
         else:
             filtered_dataframe_labels.loc[ind, "processed_structure_layer_name"] = name
     return filtered_dataframe_labels
+
+def merge_dataframes():
+    labels = get_labels()
+    epys_features = get_dataframes()
+    full_dataframe = pd.merge(epys_features, labels, left_index=True, right_index=True)
+
+    full_dataframe.drop(["id"], axis = 1)
+
+    return full_dataframe
