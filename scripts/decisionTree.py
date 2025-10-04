@@ -121,36 +121,54 @@ def decisionTreeAnalysis(X, Y, labelNames, classifierName, max_nodes = 24):
     ConfusionMatrixDisplay.from_estimator(clf2, X_train, y_train, ax = ax[1, 0])
     ConfusionMatrixDisplay.from_estimator(clf2, X_test, y_test, ax= ax[1, 1])
 
-    fig.suptitle("comparing 12 node and 24 node decision trees \n on ephys data")
+    fig.suptitle(f"comparing 12 node and 24 node decision trees \n on ephys data classifier: {classifierName}")
     plt.tight_layout()
 
     # saves plot as a png file in results
-    plt.savefig(f"{results_dir}comparingNodes_ephys{labelNames}.png")
+    plt.savefig(f"{results_dir}comparingNodes_ephys{labelNames}_classifier_{classifierName}.png")
 
 def plot_acc(X, Y, labelNames, classifierNames, max_nodes = 24):
+    """plots train and test accuracy for the different classifiers used
+
+    Args:
+        X (dataframe): features we are using to predict
+        Y (dataframe): labels we are trying to predict 
+        labelNames (string): uses it to name the files
+        classifierNames (list): a list of the classifiers used
+        max_nodes (int, optional): the number of nodes used. Defaults to 24.
+    """
     # spliting data
     X_train, X_test, y_train, y_test = train_test_split(
         X, Y, test_size=0.20, random_state=42)
     print(f"aa {len(X_train)}")
 
-    list_nodes = np.arange(2, max_nodes, 2)
+    list_nodes = np.arange(2, max_nodes)
 
     # get accuracy for train and test
-    train_acc, test_acc = get_acc(X_train, y_train, X_test, y_test, list_nodes, classifierNames)
-    print(train_acc)
-    print(test_acc)
-
+    train_dict = {}
+    test_dict = {}
+    
+    for classifier in classifierNames:
+        train_acc, test_acc = get_acc(X_train, y_train, X_test, y_test, list_nodes, classifier)
+        train_dict[classifier] = train_acc
+        test_dict[classifier] = test_acc
+    print(train_dict, test_dict)
     fig, ax  = plt.subplots()
     # plots a graph comparing train and test on accuracy
-    plt.plot(list_nodes, train_acc, label = "train")
-    plt.plot(list_nodes, test_acc, label = "test")
+    colors = ["red", "blue", "green", "purple"]
+    for ind, classifier in enumerate(train_dict.keys()):
+        plt.plot(list_nodes, train_dict[classifier], label = f"{classifier} train", color = colors[ind], linestyle = "solid")
+    for ind, classifier in enumerate(test_dict.keys()):
+        plt.plot(list_nodes, test_dict[classifier], label = f"{classifier} test", color = colors[ind], linestyle = "--")
+    
     plt.xlabel("number of nodes")
     plt.ylabel("accuracy")
     plt.title("decision tree performance on ephys data")
     plt.legend()
-    plt.show
+    plt.show()
     results_dir = f"{os.pardir}/results/"
-    plt.savefig(f"{results_dir}DecisionTreePerformance{labelNames}_ephys.png")
+    classifierName = "_".join(classifierNames)
+    plt.savefig(f"{results_dir}DecisionTreePerformance{labelNames}_classifier_{classifierName}_ephys.png")
 
 def main():
     labels = get_labels()
