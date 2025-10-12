@@ -140,7 +140,6 @@ def plot_acc(X, Y, labelNames, classifierNames, max_nodes = 24):
     # spliting data
     X_train, X_test, y_train, y_test = train_test_split(
         X, Y, test_size=0.20, random_state=42)
-    print(f"aa {len(X_train)}")
 
     list_nodes = np.arange(2, max_nodes)
 
@@ -161,14 +160,17 @@ def plot_acc(X, Y, labelNames, classifierNames, max_nodes = 24):
     for ind, classifier in enumerate(test_dict.keys()):
         plt.plot(list_nodes, test_dict[classifier], label = f"{classifier} test", color = colors[ind], linestyle = "--")
     
+    plt.axhline(1/len(Y.unique()), 0, 1, color = 'gray', linestyle = "dashed", label = "chance performance")
+
     plt.xlabel("number of nodes")
     plt.ylabel("accuracy")
-    plt.title("decision tree performance on ephys data")
+    plt.title(f"{classifierNames[0]} and {classifierNames[1]} \n accuracy using {labelNames} features")
     plt.legend()
-    plt.show()
     results_dir = f"{os.pardir}/results/"
     classifierName = "_".join(classifierNames)
     plt.savefig(f"{results_dir}DecisionTreePerformance{labelNames}_classifier_{classifierName}_ephys.png")
+    plt.show()
+
 
 def main():
     labels = get_labels()
