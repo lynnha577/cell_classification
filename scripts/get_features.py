@@ -74,6 +74,34 @@ def get_labels():
             filtered_dataframe_labels.loc[ind, "processed_structure_layer_name"] = name
     return filtered_dataframe_labels
 
+def get_morphology():
+    """gets the morphology features from ctc and stores it as a dataframe.
+
+    Returns:
+        dataframe: dataframe of cells and their morphology features
+    """
+    ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
+    morphology_features = ctc.get_morphology_features()
+    morphology = pd.DataFrame(morphology_features)
+
+    morphology.set_index("specimen_id", inplace=True)
+    return morphology
+
+def get_all_features():
+    """gets all features including morphology and ephys data from ctc and stores it as a dataframe.
+
+    Returns:
+        dataframe: dataframe of cells and all their features
+    """
+    ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
+    all_features = ctc.get_all_features(require_reconstruction=True)
+    all_features = pd.DataFrame(all_features)
+
+    all_features.set_index("specimen_id", inplace=True)
+    return all_features
+
+
+
 def merge_dataframes():
     labels = get_labels()
     epys_features = get_dataframes()
