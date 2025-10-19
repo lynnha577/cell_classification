@@ -66,7 +66,7 @@ def get_acc(X_train, y_train, X_test, y_test, list_nodes, classifierName):
 
     return train_accs, test_accs
 
-def decisionTreeAnalysis(X, Y, labelNames, classifierName, max_nodes = 24):
+def decisionTreeAnalysis(X, Y, labelNames, classifierName, max_nodes = 12):
     """ graphs a comparison of train and test accuracy using labels provided and plots a confusion
     matrix of the train and test with 12 and 24 nodes.
 
@@ -84,7 +84,7 @@ def decisionTreeAnalysis(X, Y, labelNames, classifierName, max_nodes = 24):
     results_dir = f"{os.pardir}/results/"
     X_train, X_test, y_train, y_test = train_test_split(
         X, Y, test_size=0.20, random_state=42)
-    plot_acc(X, Y, labelNames, classifierName, max_nodes = 24)
+    plot_acc(X, Y, labelNames, classifierName, max_nodes = max_nodes)
 
     # determines which classifier to use
     if classifierName == "DecisionTree":
@@ -108,8 +108,13 @@ def decisionTreeAnalysis(X, Y, labelNames, classifierName, max_nodes = 24):
     ConfusionMatrixDisplay.from_estimator(clf, X_test, y_test, ax= ax[0, 1])
 
     # makes confusion matrix on 24 nodes on train and test
-
-    clf2 = DecisionTreeClassifier(max_leaf_nodes=24, random_state=0)
+    numNodes_overfit = 24
+    if classifierName == "DecisionTree":
+        clf2 = DecisionTreeClassifier(max_leaf_nodes=numNodes_overfit, random_state=0)
+    elif classifierName == "RandomForest":
+        clf2 = RandomForestClassifier(max_leaf_nodes=numNodes_overfit, random_state=0)
+    else:
+        raise NotImplementedError
     clf2.fit(X_train, y_train)
 
     y_pred = clf2.predict(X_train)
@@ -127,7 +132,7 @@ def decisionTreeAnalysis(X, Y, labelNames, classifierName, max_nodes = 24):
     # saves plot as a png file in results
     plt.savefig(f"{results_dir}comparingNodes_ephys{labelNames}_classifier_{classifierName}.png")
 
-def plot_acc(X, Y, labelNames, classifierNames, max_nodes = 24):
+def plot_acc(X, Y, labelNames, classifierNames, featureType, max_nodes = 24):
     """plots train and test accuracy for the different classifiers used
 
     Args:
@@ -156,16 +161,20 @@ def plot_acc(X, Y, labelNames, classifierNames, max_nodes = 24):
     # plots a graph comparing train and test on accuracy
     colors = ["red", "blue", "green", "purple"]
     for ind, classifier in enumerate(train_dict.keys()):
-        plt.plot(list_nodes, train_dict[classifier], label = f"{classifier} train", color = colors[ind], linestyle = "solid")
+        ax.plot(list_nodes, train_dict[classifier], label = f"{classifier} train", color = colors[ind], linestyle = "solid")
     for ind, classifier in enumerate(test_dict.keys()):
-        plt.plot(list_nodes, test_dict[classifier], label = f"{classifier} test", color = colors[ind], linestyle = "--")
-    
-    plt.axhline(1/len(Y.unique()), 0, 1, color = 'gray', linestyle = "dashed", label = "chance performance")
+        ax.plot(list_nodes, test_dict[classifier], label = f"{classifier} test", color = colors[ind], linestyle = "--")
+    chancePerformance = 1/len(Y.unique())
+    ax.axhline(chancePerformance, 0, 1, color = 'gray', linestyle = "dashed", label = "chance performance")
 
-    plt.xlabel("number of nodes")
-    plt.ylabel("accuracy")
-    plt.title(f"{classifierNames[0]} and {classifierNames[1]} \n accuracy using {labelNames} features")
-    plt.legend()
+    ax.set_xlabel("number of nodes")
+    ax.set_ylabel("accuracy")
+    yStep = 0.05
+    ax.set_yticks(np.arange(chancePerformance, 1+yStep, yStep))
+    xStep = 2
+    ax.set_xticks(np.arange(0, max_nodes+xStep, xStep))
+    ax.set_title(f"{classifierNames[0]} and {classifierNames[1]} \n accuracy using {labelNames} labels and {featureType} features")
+    ax.legend()
     results_dir = f"{os.pardir}/results/"
     classifierName = "_".join(classifierNames)
     plt.savefig(f"{results_dir}DecisionTreePerformance{labelNames}_classifier_{classifierName}_ephys.png")
