@@ -84,6 +84,10 @@ def get_morphology():
     morphology_features = ctc.get_morphology_features()
     morphology = pd.DataFrame(morphology_features)
 
+    le1 = LabelEncoder()
+    le1.fit(morphology['neuron_reconstruction_type'])
+    morphology['neuron_reconstruction_type'] = le1.transform(morphology['neuron_reconstruction_type'])
+    morphology = morphology.drop(["tags", "average_bifurcation_angle_remote", "hausdorff_dimension", "scale_factor_z", "id"], axis = 1)
     morphology.set_index("specimen_id", inplace=True)
     return morphology
 
