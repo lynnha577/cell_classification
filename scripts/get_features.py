@@ -9,7 +9,7 @@ def get_dataframes(recon_bool=True):
     Args: 
         recon_bool (bool), optional: determines whether cell should require reconstruction
 
-    Returns:
+    Returns
         Dataframe: dataframe of cells and their features
     """
     ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
@@ -23,6 +23,7 @@ def get_dataframes(recon_bool=True):
     all_ids = [item["id"] for item in cells_w_recon]
     #ef_with_recon_df = ef_df[ef_df["specimen_id"].isin(all_ids)]
     ef_with_recon_df = ef_df[ef_df["specimen_id"].isin(all_ids)]
+    ef_with_recon_df = ef_with_recon_df.drop(["id"], axis = 1)
     ef_with_recon_df.set_index("specimen_id", inplace=True)
     return ef_with_recon_df
     
@@ -101,7 +102,13 @@ def get_all_features():
     all_features = ctc.get_all_features(require_reconstruction=True)
     all_features = pd.DataFrame(all_features)
 
+    le1 = LabelEncoder()
+    le1.fit(all_features['neuron_reconstruction_type'])
+
+    all_features['neuron_reconstruction_type'] = le1.transform(all_features['neuron_reconstruction_type'])
+    all_features = all_features.drop(["tags", "average_bifurcation_angle_remote", "hausdorff_dimension", "scale_factor_z", "id_x", "id_y"], axis = 1)
     all_features.set_index("specimen_id", inplace=True)
+
     return all_features
 
 
