@@ -7,6 +7,9 @@ import pandas as pd
 from get_features import get_dataframes, get_labels
 import os
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import KFold
+from scipy import stats
+
 
 
 def make_decisionTree(X, Y, max_leaf_nodes):
@@ -151,24 +154,65 @@ def plot_acc(X, Y, labelNames, classifierNames, featureType, max_nodes = 24):
     # get accuracy for train and test
     train_dict = {}
     test_dict = {}
-    
+
+    train_sem_dict = {}
+    test_sem_dict = {}
+
+    # gets accuracy of each classifier
     for classifier in classifierNames:
-        train_acc, test_acc = get_acc(X_train, y_train, X_test, y_test, list_nodes, classifier)
-        train_dict[classifier] = train_acc
-        test_dict[classifier] = test_acc
+        kf = KFold(n_splits=5)
+        kf.get_n_splits(X)
+
+        train_accs = []
+        test_accs = []
+        
+        # create a list of accs for train and test for each fold
+        for i, (train_index, test_index) in enumerate(kf.split(X)):
+            X_train = X.iloc[train_index]
+            X_test = X.iloc[test_index]
+            y_train = Y.iloc[train_index]
+            y_test = Y.iloc[test_index]
+
+            train_acc, test_acc = get_acc(X_train, y_train, X_test, y_test, list_nodes, classifier)
+            train_accs.append(train_acc)
+            test_accs.append(test_acc)
+
+        # find average of values in accuracy lists
+        train_accs_array = np.array(train_accs)
+        test_accs_array = np.array(test_accs)
+        avg_train = np.average(train_accs_array, axis = 0)
+        avg_test = np.average(test_accs_array, axis = 0)
+
+
+        train_dict[classifier] = avg_train
+        test_dict[classifier] = avg_test
+
+        train_acc_sem = stats.sem(train_accs, axis = 0)
+        test_acc_sem = stats.sem(test_accs, axis = 0)
+
+        train_sem_dict[classifier] = train_acc_sem
+        test_sem_dict[classifier] = test_acc_sem
+
+        
+
+
     print(train_dict, test_dict)
     fig, ax  = plt.subplots()
+
     # plots a graph comparing train and test on accuracy
     colors = ["red", "blue", "green", "purple"]
     for ind, classifier in enumerate(train_dict.keys()):
         ax.plot(list_nodes, train_dict[classifier], label = f"{classifier} train", color = colors[ind], linestyle = "solid")
+        ax.fill_between(list_nodes, train_dict[classifier]-train_sem_dict[classifier], train_dict[classifier]+train_sem_dict[classifier], color = colors[ind], alpha = 0.3)
     for ind, classifier in enumerate(test_dict.keys()):
         ax.plot(list_nodes, test_dict[classifier], label = f"{classifier} test", color = colors[ind], linestyle = "--")
+        ax.fill_between(list_nodes, test_dict[classifier]-test_sem_dict[classifier], test_dict[classifier]+test_sem_dict[classifier], color = colors[ind], alpha = 0.3)
+
     chancePerformance = 1/len(Y.unique())
     ax.axhline(chancePerformance, 0, 1, color = 'gray', linestyle = "dashed", label = "chance performance")
 
-    ax.set_xlabel("number of nodes")
-    ax.set_ylabel("accuracy")
+    ax.set_xlabel("Number of Nodes")
+    ax.set_ylabel("Accuracy")
     yStep = 0.05
     ax.set_yticks(np.arange(chancePerformance, 1+yStep, yStep))
     xStep = 2
