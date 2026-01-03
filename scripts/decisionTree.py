@@ -208,20 +208,21 @@ def plot_acc(X, Y, labelNames, classifierNames, featureType, max_nodes = 24):
         ax.plot(list_nodes, test_dict[classifier], label = f"{classifier} test", color = colors[ind], linestyle = "--")
         ax.fill_between(list_nodes, test_dict[classifier]-test_sem_dict[classifier], test_dict[classifier]+test_sem_dict[classifier], color = colors[ind], alpha = 0.3)
 
-    chancePerformance = 1/len(Y.unique())
+    chancePerformance = np.round(1/len(Y.unique()), 2)
     ax.axhline(chancePerformance, 0, 1, color = 'gray', linestyle = "dashed", label = "chance performance")
 
     ax.set_xlabel("Number of Nodes")
     ax.set_ylabel("Accuracy")
     yStep = 0.05
-    ax.set_yticks(np.arange(chancePerformance, 1+yStep, yStep))
+    ax.set_yticks(np.arange(chancePerformance-yStep, 1+yStep, yStep))
     xStep = 2
     ax.set_xticks(np.arange(0, max_nodes+xStep, xStep))
     ax.set_title(f"{classifierNames[0]} and {classifierNames[1]} \n accuracy using {labelNames} labels and {featureType} features")
     ax.legend()
     results_dir = f"{os.pardir}/results/"
     classifierName = "_".join(classifierNames)
-    plt.savefig(f"{results_dir}DecisionTreePerformance{labelNames}_classifier_{classifierName}_ephys.png")
+    plt.savefig(f"{results_dir}DecisionTreePerformance{labelNames}_classifier_{classifierName}_{featureType}.svg")
+    plt.savefig(f"{results_dir}DecisionTreePerformance{labelNames}_classifier_{classifierName}_{featureType}.png")
     plt.show()
 
 

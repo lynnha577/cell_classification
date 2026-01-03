@@ -26,9 +26,10 @@ def plot_data(cell_specimen_id, sweep_number, tstart, tend):
     v = sweep_data["response"][0:index_range[1]+1] # in V
     i *= 1e12 # to pA
     v *= 1e3 # to mV
-
+    
     sampling_rate = sweep_data["sampling_rate"] # in Hz
-    t = np.arange(0, len(v)) * (1.0 / sampling_rate)
+    t = np.arange(0, len(v))/ sampling_rate
+
 
     plt.style.use('fivethirtyeight')
     fig, axes = plt.subplots(2, 1, sharex=True)
