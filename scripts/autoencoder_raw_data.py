@@ -9,13 +9,16 @@ import torch.nn as nn
 import torch.optim as optim
 import torch
 import matplotlib.pyplot as plt
+from get_features import get_dataframes, get_labels
 
 
-def get_raw_data(cell_id):
+
+def get_raw_data(cell_id, data_folder=f"{os.pardir}/data/"):
     #get data for cell_id
     ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
     data_set = ctc.get_ephys_data(cell_id)
     sweeps = ctc.get_ephys_sweeps(cell_id)
+    print(sweeps)
 
     #find maxT and data_count to prelocate data
     maxT = 0
@@ -27,7 +30,9 @@ def get_raw_data(cell_id):
         if sweeps[i]['stimulus_units'] == 'Volts':
             count += 1
             continue
-        sweep_data = data_set.get_sweep(i)
+        
+        print("this is the sweep number", sweeps[i]["sweep_number"])
+        sweep_data = data_set.get_sweep(sweeps[i]["sweep_number"])
         index_range = sweep_data["index_range"]
         sampling_rate = sweep_data["sampling_rate"] # in Hz
         down_sampling_rate = sampling_rate
@@ -53,7 +58,7 @@ def get_raw_data(cell_id):
         if sweeps[n]['stimulus_units'] == 'Volts':
             count += 1
             continue
-        sweep_data = data_set.get_sweep(n)
+        sweep_data = data_set.get_sweep(sweeps[n]["sweep_number"])
         index_range = sweep_data["index_range"]
         i = sweep_data["stimulus"][index_range[0]:index_range[1]+1] # in A
         v = sweep_data["response"][index_range[0]:index_range[1]+1] # in V
@@ -87,11 +92,11 @@ def get_raw_data(cell_id):
 
         sampling_rate = sweep_data["sampling_rate"] # in Hz
         t = (index_range[1]+1-index_range[0])/ sampling_rate
-        if(n==35):
-            times = np.arange(v.shape[0])/down_sampling_rate
-            plt.plot(times, v, color = "blue")
-            plt.plot(times, filtered_x, color = 'red')
-            plt.show()
+        # if(n==35):
+        #     times = np.arange(v.shape[0])/down_sampling_rate
+        #     plt.plot(times, v, color = "blue")
+        #     plt.plot(times, filtered_x, color = 'red')
+        #     plt.show()
         cell_data_i[n-count, :len(i)] = i
         cell_data_v[n-count, :len(v)] = v
         
@@ -99,7 +104,7 @@ def get_raw_data(cell_id):
     
     #save data as file
     print(os.getcwd())
-    data_folder = f"{os.pardir}/data/"
+    #data_folder = f"{os.pardir}/data/"
     np.save(data_folder+ f"{cell_id}_current.npy", cell_data_i)
     np.save(data_folder+ f"{cell_id}_voltage_filtered.npy", cell_data_i)
 
@@ -107,6 +112,22 @@ def get_raw_data(cell_id):
     meta_dataframe.to_csv(data_folder+f"{cell_id}_data.csv")
 
     return cell_data_i, cell_data_v, meta_dataframe
+
+def train_test_split():
+    epys_features = get_dataframes()
+    test = []
+    test_loc = []
+    for idx in epys_features.index:
+        voltage_data = np.load(f"{os.pardir}/data/{idx}_voltage.npy")
+
+        rng = np.random.default_rng()
+        random_sweep_number = rng.integers(low = 0, high = voltage_data.shape[0], size = 1)
+        testVoltage = voltage_data[random_sweep_number,:]
+        test.append(testVoltage)
+        test_loc.append((idx, random_sweep_number))
+    
+    return test, test_loc
+
 
 def sample_batch_training_data(cell_id, input_size, num_samples, output_size):
     """
