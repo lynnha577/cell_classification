@@ -38,6 +38,8 @@ class LSTM_voltage_predictor(nn.Module):
         self.activationFunction2 = nn.ReLU()
         self.layer3 = nn.LSTM(8, output_size)
 
+        self.layer4 = nn.LSTM(output_size, output_size)
+
     # sets how data moves thorugh layers
     def forward(self, x):
         x, _=self.layer1(x) # input goes through first layer
@@ -47,5 +49,8 @@ class LSTM_voltage_predictor(nn.Module):
         x = self.activationFunction2(x) # ReLU is activated 
 
         x, _ = self.layer3(x)
+        x = self.activationFunction2(x)
+
+        x, _ = self.layer4(x)
         x = self.activationFunction2(x)
         return x # output is returned.
