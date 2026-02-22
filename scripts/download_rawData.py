@@ -4,7 +4,6 @@ from allensdk.core.cell_types_cache import CellTypesCache
 import numpy as np
 from scipy import signal
 import pandas as pd
-import os
 
 cell_id = 323865917
 
@@ -17,7 +16,7 @@ plot_data(323865917, 35, 0, 10)
 
 from autoencoder_raw_data import get_raw_data
 for idx in epys_features.index:
-    cell_data_i, cell_data_v, metadata = get_raw_data(idx, data_folder=f"{os.pardir}/cell_classification/data/")
+    cell_data_i, cell_data_v, metadata = get_raw_data(idx)
 
     print(cell_data_i)
     print(cell_data_v)

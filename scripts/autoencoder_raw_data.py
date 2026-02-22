@@ -10,15 +10,45 @@ import torch.optim as optim
 import torch
 import matplotlib.pyplot as plt
 from get_features import get_dataframes, get_labels
+from pathlib import Path
+
+
+DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+
+
+def _resolve_data_dir(data_folder=None):
+    """Resolve a data directory path relative to repo root and create it if needed."""
+    if data_folder is None:
+        data_path = DATA_DIR
+    else:
+        data_path = Path(data_folder)
+        if not data_path.is_absolute():
+            data_path = (Path(__file__).resolve().parent / data_path).resolve()
+
+    data_path.mkdir(parents=True, exist_ok=True)
+    return data_path
+
+
+def _ensure_raw_data(cell_id, data_path):
+    """Download and cache raw data for cell_id if it is missing."""
+    voltage_path = data_path / f"{cell_id}_voltage.npy"
+    metadata_path = data_path / f"{cell_id}_data.csv"
+
+    if voltage_path.exists() and metadata_path.exists():
+        return
+
+    get_raw_data(cell_id, data_folder=data_path)
 
 
 
-def get_raw_data(cell_id, data_folder=f"{os.pardir}/data/"):
+def get_raw_data(cell_id, data_folder=None):
     #get data for cell_id
     ctc = CellTypesCache(manifest_file='cell_types/manifest.json')
     data_set = ctc.get_ephys_data(cell_id)
     sweeps = ctc.get_ephys_sweeps(cell_id)
     print(sweeps)
+
+    data_path = _resolve_data_dir(data_folder)
 
     #find maxT and data_count to prelocate data
     maxT = 0
@@ -52,6 +82,7 @@ def get_raw_data(cell_id, data_folder=f"{os.pardir}/data/"):
     #store i, v for the sweep into arrays and store metadata
     cell_data_i = np.empty((data_count, int(maxT*down_sampling_rate)+1))
     cell_data_v = np.empty((data_count, int(maxT*down_sampling_rate)+1))
+    cell_data_v_filtered = np.empty((data_count, int(maxT*down_sampling_rate)+1))
     count = 0
     metadata = []
     for n in range(0, len(sweeps)):
@@ -99,26 +130,29 @@ def get_raw_data(cell_id, data_folder=f"{os.pardir}/data/"):
         #     plt.show()
         cell_data_i[n-count, :len(i)] = i
         cell_data_v[n-count, :len(v)] = v
+        cell_data_v_filtered[n-count, :len(filtered_x)] = filtered_x
         
         metadata.append([n-count, n, t, down_sampling_rate])
     
     #save data as file
     print(os.getcwd())
-    #data_folder = f"{os.pardir}/data/"
-    np.save(data_folder+ f"{cell_id}_current.npy", cell_data_i)
-    np.save(data_folder+ f"{cell_id}_voltage_filtered.npy", cell_data_i)
+    np.save(data_path / f"{cell_id}_current.npy", cell_data_i)
+    np.save(data_path / f"{cell_id}_voltage.npy", cell_data_v)
+    np.save(data_path / f"{cell_id}_voltage_filtered.npy", cell_data_v_filtered)
 
     meta_dataframe = pd.DataFrame(metadata, columns = ['index', 'sweep number', 'time', 'sampling_rate'])
-    meta_dataframe.to_csv(data_folder+f"{cell_id}_data.csv")
+    meta_dataframe.to_csv(data_path / f"{cell_id}_data.csv")
 
     return cell_data_i, cell_data_v, meta_dataframe
 
-def train_test_split():
+def train_test_split(data_folder=None):
     epys_features = get_dataframes()
+    data_path = _resolve_data_dir(data_folder)
     test = []
     test_loc = []
     for idx in epys_features.index:
-        voltage_data = np.load(f"{os.pardir}/data/{idx}_voltage.npy")
+        _ensure_raw_data(idx, data_path)
+        voltage_data = np.load(data_path / f"{idx}_voltage.npy")
 
         rng = np.random.default_rng()
         random_sweep_number = rng.integers(low = 0, high = voltage_data.shape[0], size = 1)
@@ -129,7 +163,7 @@ def train_test_split():
     return test, test_loc
 
 
-def sample_batch_training_data(cell_id, input_size, num_samples, output_size):
+def sample_batch_training_data(cell_id, input_size, num_samples, output_size, data_folder=None):
     """
     Docstring for sample_batch_training_data: Creates a batch of inputs and outputs from
     the cell's voltage based on the number of inputs and outputs.
@@ -139,7 +173,9 @@ def sample_batch_training_data(cell_id, input_size, num_samples, output_size):
     :param num_samples: the amount of samples to use
     :param output_size: the number of numbers to be predicted
     """
-    voltage_data = np.load(f"{os.pardir}/data/{cell_id}_voltage.npy")
+    data_path = _resolve_data_dir(data_folder)
+    _ensure_raw_data(cell_id, data_path)
+    voltage_data = np.load(data_path / f"{cell_id}_voltage.npy")
     #set the size of input to 20 and the number of samples to 100
 
     # create an empty list for input and output
@@ -147,7 +183,7 @@ def sample_batch_training_data(cell_id, input_size, num_samples, output_size):
     outputs = np.empty((output_size, num_samples))
 
     #get a random sweep number and random start index
-    metadata = pd.read_csv(f'../data/{cell_id}_data.csv')
+    metadata = pd.read_csv(data_path / f'{cell_id}_data.csv')
 
     rng = np.random.default_rng()
     random_sweep_number = rng.integers(low = 0, high = voltage_data.shape[0], size = num_samples)
