@@ -186,3 +186,17 @@ cell_types/
 scripts/cell_types/
 .vscode/
 data/
+
+# macOS metadata files
+.DS_Store
+**/.DS_Store
+
+# Poster outputs
+poster/output/
+
+
+# Generated poster figure images
+poster/output/**/*.png
+poster/output/**/*.jpg
+poster/output/**/*.jpeg
+poster/output/**/*.svg
