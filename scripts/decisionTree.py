@@ -69,7 +69,7 @@ def get_acc(X_train, y_train, X_test, y_test, list_nodes, classifierName):
 
     return train_accs, test_accs
 
-def decisionTreeAnalysis(X, Y, labelNames, classifierName, max_nodes = 12):
+def decisionTreeAnalysis(X, Y, labelNames, classifierName, featureType, max_nodes = 12):
     """ graphs a comparison of train and test accuracy using labels provided and plots a confusion
     matrix of the train and test with 12 and 24 nodes.
 
@@ -87,7 +87,6 @@ def decisionTreeAnalysis(X, Y, labelNames, classifierName, max_nodes = 12):
     results_dir = f"{os.pardir}/results/"
     X_train, X_test, y_train, y_test = train_test_split(
         X, Y, test_size=0.20, random_state=42)
-    plot_acc(X, Y, labelNames, classifierName, max_nodes = max_nodes)
 
     # determines which classifier to use
     if classifierName == "DecisionTree":
@@ -104,36 +103,22 @@ def decisionTreeAnalysis(X, Y, labelNames, classifierName, max_nodes = 12):
     matrix = confusion_matrix(y_train, y_pred)
 
     from sklearn.metrics import ConfusionMatrixDisplay
-    fig, ax  = plt.subplots(nrows=2, ncols=2, sharex = True, sharey=True)
-    ax[0,0].set_title('12 node on train')
-    ax[0,1].set_title("12 node on test")
-    ConfusionMatrixDisplay.from_estimator(clf, X_train, y_train, ax = ax[0,0])
-    ConfusionMatrixDisplay.from_estimator(clf, X_test, y_test, ax= ax[0, 1])
+    fig, ax  = plt.subplots(nrows=1, ncols=2, sharex = True, sharey=True)
+    ax[0].set_title('12 node on train', fontsize = 10)
+    ax[1].set_title("12 node on test", fontsize = 10)
+    ConfusionMatrixDisplay.from_estimator(clf, X_train, y_train, ax = ax[0])
+    ConfusionMatrixDisplay.from_estimator(clf, X_test, y_test, ax= ax[1])
 
-    # makes confusion matrix on 24 nodes on train and test
-    numNodes_overfit = 24
-    if classifierName == "DecisionTree":
-        clf2 = DecisionTreeClassifier(max_leaf_nodes=numNodes_overfit, random_state=0)
-    elif classifierName == "RandomForest":
-        clf2 = RandomForestClassifier(max_leaf_nodes=numNodes_overfit, random_state=0)
-    else:
-        raise NotImplementedError
-    clf2.fit(X_train, y_train)
-
-    y_pred = clf2.predict(X_train)
-    from sklearn.metrics import confusion_matrix
-    matrix = confusion_matrix(y_train, y_pred)
-
-    ax[1,0].set_title('24 node on train')
-    ax[1,1].set_title("24 node on test")
-    ConfusionMatrixDisplay.from_estimator(clf2, X_train, y_train, ax = ax[1, 0])
-    ConfusionMatrixDisplay.from_estimator(clf2, X_test, y_test, ax= ax[1, 1])
-
-    fig.suptitle(f"comparing 12 node and 24 node decision trees \n on ephys data classifier: {classifierName}")
+    fig.suptitle(f"decision trees on ephys data. \nclassifier: {classifierName}", fontsize = 20)
     plt.tight_layout()
 
     # saves plot as a png file in results
-    plt.savefig(f"{results_dir}comparingNodes_ephys{labelNames}_classifier_{classifierName}.png")
+    plt.savefig(f"{results_dir}confusionMatrix_trainTestComp_{labelNames}_prediction_{featureType}.png")
+
+    fig, ax  = plt.subplots(nrows=1, ncols=1)
+    ax.set_title(f"Test Results to predict \n{labelNames} with {featureType}", fontsize = 20)
+    ConfusionMatrixDisplay.from_estimator(clf, X_test, y_test, ax = ax)
+    plt.savefig(f"{results_dir}confusionMatrix_testResults_{labelNames}_prediction_{featureType}.png")
 
 def plot_acc(X, Y, labelNames, classifierNames, featureType, max_nodes = 24):
     """plots train and test accuracy for the different classifiers used
