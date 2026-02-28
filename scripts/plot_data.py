@@ -7,6 +7,16 @@ import pprint
 from pathlib import Path
 import os
 
+
+RESULTS_DIR = Path(__file__).resolve().parent.parent / "results"
+
+
+def _ensure_results_folder(subdir="rawDataVisualization"):
+    folder = RESULTS_DIR / subdir
+    folder.mkdir(parents=True, exist_ok=True)
+    return folder
+
+
 def plot_data(cell_specimen_id, sweep_number, tstart, tend):
     """
     plotting the applied current to the cell over time and the response voltage of the cell over time.
@@ -56,7 +66,7 @@ def plot_data(cell_specimen_id, sweep_number, tstart, tend):
     axes[1].set_ylabel("pA")
     axes[1].set_xlabel("seconds")
 
-    results_folder = Path(f"{os.pardir}/results/rawDataVisualization")
+    results_folder = _ensure_results_folder()
     plt.savefig(results_folder / f"{cell_specimen_id}_{sweep_number}_ephysData.svg")
 
     plt.show()
@@ -94,7 +104,7 @@ def plot_morphology(cell_id):
     axes[0].set_ylabel('y')
     axes[0].set_xlabel('x')
     axes[1].set_xlabel('z')
-    results_folder = Path(f"{os.pardir}/results/rawDataVisualization")
+    results_folder = _ensure_results_folder()
     plt.savefig(results_folder / f"{cell_id}_morphPlot.svg")
     plt.show()
 
@@ -143,7 +153,7 @@ def plot_morphology_3D(cell_id):
     ax.set_title('3D Neuron Morphology', fontsize = 30)
     plt.legend()
     ax.view_init(elev=30, azim=25)
-    results_folder = Path(f"{os.pardir}/results/rawDataVisualization")
+    results_folder = _ensure_results_folder()
     plt.savefig(results_folder / f"{cell_id}_morphPlot3D.svg")
     plt.show()
 
