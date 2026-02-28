@@ -12,7 +12,7 @@ from scipy import stats
 
 
 
-def make_decisionTree(X, Y, max_leaf_nodes):
+def make_decisionTree(X, Y, max_leaf_nodes, label, featureType):
     """
     creates a decision tree and fits to x and y train and plots the tree.
 
@@ -32,7 +32,11 @@ def make_decisionTree(X, Y, max_leaf_nodes):
     clf.fit(X_train, y_train)
 
     tree.plot_tree(clf, proportion=True)
+    results_dir = f"{os.pardir}/results/"
+    plt.savefig(f"{results_dir}DecisionTree_plot_{label}_{featureType}.svg")
+
     plt.show()
+
 
 
 def get_acc(X_train, y_train, X_test, y_test, list_nodes, classifierName):
@@ -113,12 +117,25 @@ def decisionTreeAnalysis(X, Y, labelNames, classifierName, featureType, max_node
     plt.tight_layout()
 
     # saves plot as a png file in results
-    plt.savefig(f"{results_dir}confusionMatrix_trainTestComp_{labelNames}_prediction_{featureType}.png")
+    plt.savefig(f"{results_dir}confusionMatrix_trainTestComp_{labelNames}_prediction_{featureType}.svg")
 
     fig, ax  = plt.subplots(nrows=1, ncols=1)
-    ax.set_title(f"Test Results to predict \n{labelNames} with {featureType}", fontsize = 20)
-    ConfusionMatrixDisplay.from_estimator(clf, X_test, y_test, ax = ax)
-    plt.savefig(f"{results_dir}confusionMatrix_testResults_{labelNames}_prediction_{featureType}.png")
+
+    labelsX = ax.get_xticklabels(minor=False, which=None)
+    ax.set_xticklabels(labelsX, minor=False, fontdict=None, fontsize = 15)
+    labelsY = ax.get_yticklabels(minor=False, which=None)
+    ax.set_yticklabels(labelsY, minor=False, fontdict=None, fontsize = 15)
+
+    ax.set_xlabel("Predicted Label", fontsize = 15)
+    ax.set_ylabel("True Label", fontsize = 15)
+
+    ax.set_title(f"Test Results to predict \n{labelNames} with {featureType}", fontsize = 20, pad = 20)
+    matrixDisplay = ConfusionMatrixDisplay.from_estimator(clf, X_test, y_test, ax = ax)
+    for labels in matrixDisplay.text_.ravel():
+        labels.set_fontsize(30)
+
+    plt.tight_layout()
+    plt.savefig(f"{results_dir}confusionMatrix_testResults_{labelNames}_prediction_{featureType}.svg")
 
 def plot_acc(X, Y, labelNames, classifierNames, featureType, max_nodes = 24):
     """plots train and test accuracy for the different classifiers used
