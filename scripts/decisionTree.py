@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn import tree
 import numpy as np
 import pandas as pd
-from get_features import get_dataframes, get_labels
+from get_features import get_dataframes, get_labels, get_morphology, get_all_features
 import os
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import KFold
@@ -21,7 +21,6 @@ def make_decisionTree(X, Y, max_leaf_nodes, label, featureType):
         Y (dataframe): the labels we want to predict.
         max_leaf_nodes (int): the max number of leaf nodes for the tree.
     """
-
     X = X.to_numpy()
     Y = Y.to_numpy()
 
@@ -31,11 +30,20 @@ def make_decisionTree(X, Y, max_leaf_nodes, label, featureType):
     clf = DecisionTreeClassifier(max_leaf_nodes = max_leaf_nodes, random_state=0)
     clf.fit(X_train, y_train)
 
-    tree.plot_tree(clf, proportion=True)
+    fig, ax = plt.subplots(figsize=(15, 10))
+    tree.plot_tree(clf, proportion=True, filled=True, fontsize=12, ax=ax)
+    ax.set_title(
+        f"Decision Tree for {label} Classification\nUsing {featureType} Features",
+        fontsize=18,
+        fontweight='bold',
+        pad=20
+    )
     results_dir = f"{os.pardir}/results/"
-    plt.savefig(f"{results_dir}DecisionTree_plot_{label}_{featureType}.svg")
+    plt.subplots_adjust(left=0.01, right=0.99, top=0.93, bottom=0.01)
+    plt.savefig(f"{results_dir}DecisionTree_plot_{label}_{featureType}.svg", bbox_inches='tight', pad_inches=0.1)
+    plt.savefig(f"{results_dir}DecisionTree_plot_{label}_{featureType}.png", bbox_inches='tight', pad_inches=0.1, dpi=300)
 
-    plt.show()
+    #plt.show()
 
 
 
@@ -100,6 +108,12 @@ def decisionTreeAnalysis(X, Y, labelNames, classifierName, featureType, max_node
     else:
         raise NotImplementedError
     
+
+    scale = len(np.unique(Y))/2
+    s_fontsize= 15 * scale
+    m_fontsize = 20 *scale
+    b_fontsize= 13 * scale
+
     #makes a confusion matrix on 12 nodes train and test
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_train)
@@ -107,35 +121,57 @@ def decisionTreeAnalysis(X, Y, labelNames, classifierName, featureType, max_node
     matrix = confusion_matrix(y_train, y_pred)
 
     from sklearn.metrics import ConfusionMatrixDisplay
-    fig, ax  = plt.subplots(nrows=1, ncols=2, sharex = True, sharey=True)
-    ax[0].set_title('12 node on train', fontsize = 10)
-    ax[1].set_title("12 node on test", fontsize = 10)
-    ConfusionMatrixDisplay.from_estimator(clf, X_train, y_train, ax = ax[0])
-    ConfusionMatrixDisplay.from_estimator(clf, X_test, y_test, ax= ax[1])
 
-    fig.suptitle(f"decision trees on ephys data. \nclassifier: {classifierName}", fontsize = 20)
-    plt.tight_layout()
-
-    # saves plot as a png file in results
-    plt.savefig(f"{results_dir}confusionMatrix_trainTestComp_{labelNames}_prediction_{featureType}.svg")
-
-    fig, ax  = plt.subplots(nrows=1, ncols=1)
-
-    labelsX = ax.get_xticklabels(minor=False, which=None)
-    ax.set_xticklabels(labelsX, minor=False, fontdict=None, fontsize = 15)
-    labelsY = ax.get_yticklabels(minor=False, which=None)
-    ax.set_yticklabels(labelsY, minor=False, fontdict=None, fontsize = 15)
-
-    ax.set_xlabel("Predicted Label", fontsize = 15)
-    ax.set_ylabel("True Label", fontsize = 15)
-
-    ax.set_title(f"Test Results to predict \n{labelNames} with {featureType}", fontsize = 20, pad = 20)
+    fig, ax  = plt.subplots(nrows=1, ncols=1, figsize = (5*scale, 5*scale))
+    ax.set_title(f"Test Results to predict \n{labelNames}\n with {featureType}", fontsize = m_fontsize, pad = 20)
     matrixDisplay = ConfusionMatrixDisplay.from_estimator(clf, X_test, y_test, ax = ax)
     for labels in matrixDisplay.text_.ravel():
-        labels.set_fontsize(30)
+        labels.set_fontsize(b_fontsize)
+
+    locs, labels = plt.xticks()
+    plt.xticks(locs, labels, rotation=45)
+    labelsX = ax.get_xticklabels(minor=False, which=None)
+    ax.set_xticklabels(labelsX, minor=False, fontdict=None, fontsize = s_fontsize, rotation = "vertical")
+    #ax.tick_params(axis='x', labelrotation="vertical")
+
+    labelsY = ax.get_yticklabels(minor=False, which=None)
+    ax.set_yticklabels(labelsY, minor=False, fontdict=None, fontsize = s_fontsize)
+
+    ax.set_xlabel("Predicted Label", fontsize = s_fontsize)
+    ax.set_ylabel("True Label", fontsize = s_fontsize)
+
+    
 
     plt.tight_layout()
     plt.savefig(f"{results_dir}confusionMatrix_testResults_{labelNames}_prediction_{featureType}.svg")
+
+    fig, ax  = plt.subplots(nrows=1, ncols=1, figsize = (5*scale, 5*scale))
+    b_fontsize= 8 * scale
+    ax.set_title(f"{max_nodes} train", fontsize =s_fontsize)
+    matrix_train = ConfusionMatrixDisplay.from_estimator(clf, X_train, y_train, ax = ax)
+    for labels in matrix_train.text_.ravel():
+        labels.set_fontsize(b_fontsize)
+
+    locs, labels = plt.xticks()
+    plt.xticks(locs, labels, rotation=45)
+    labelsX = ax.get_xticklabels(minor=False, which=None)
+    ax.set_xticklabels(labelsX, minor=False, fontdict=None, fontsize = s_fontsize, rotation = "vertical")
+    #ax.tick_params(axis='x', labelrotation="vertical")
+
+    labelsY = ax.get_yticklabels(minor=False, which=None)
+    ax.set_yticklabels(labelsY, minor=False, fontdict=None, fontsize = s_fontsize)
+
+    ax.set_xlabel("Predicted Label", fontsize = s_fontsize)
+    ax.set_ylabel("True Label", fontsize = s_fontsize)
+
+    ax.set_title(f"Train Results to predict \n{labelNames}\n with {featureType}", fontsize = m_fontsize, pad = 20)
+    plt.tight_layout()
+
+    # saves plot as a png file in results
+    plt.savefig(f"{results_dir}confusionMatrix_trainResults_{labelNames}_prediction_{featureType}.svg")
+
+
+
 
 def plot_acc(X, Y, labelNames, classifierNames, featureType, max_nodes = 24):
     """plots train and test accuracy for the different classifiers used
